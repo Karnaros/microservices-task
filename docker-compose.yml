@@ -1,0 +1,88 @@
+services:
+  gateway:
+    container_name: gateway
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: development
+    command: npm run start:dev gateway
+    env_file:
+      - .env
+      - ./apps/gateway/.env
+    depends_on:
+      - rabbitmq
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '5000:5000'
+    restart: always
+  profile:
+    container_name: profile
+    build:
+      context: .
+      dockerfile: ./apps/profile/Dockerfile
+      target: development
+    command: npm run start:dev profile
+    env_file:
+      - .env
+      - ./apps/profile/.env
+    depends_on:
+      - rabbitmq
+      - postgres-profile
+      - gateway
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: always
+  user:
+    container_name: user
+    build:
+      context: .
+      dockerfile: ./apps/user/Dockerfile
+      target: development
+    command: npm run start:dev user
+    env_file:
+      - .env
+      - ./apps/user/.env
+    depends_on:
+      - rabbitmq
+      - postgres-user
+      - gateway
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    restart: always
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.11.13-management-alpine
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    restart: always
+  postgres-profile:
+    container_name: postgres-profile
+    image: postgres:15.2-alpine
+    env_file:
+      - .env
+      - ./apps/profile/.env
+    ports:
+      - 29172:5432
+    volumes:
+      - pgProfileData:/var/lib/postgresql/data
+    restart: always
+  postgres-user:
+    container_name: postgres-user
+    image: postgres:15.2-alpine
+    env_file:
+      - .env
+      - ./apps/user/.env
+    ports:
+      - 29171:5432
+    volumes:
+      - pgUserData:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  pgUserData:
+  pgProfileData:
